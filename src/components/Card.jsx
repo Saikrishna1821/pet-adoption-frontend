@@ -1,53 +1,93 @@
 import axios from "axios";
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, {
+  useEffect,
+  useRef,
+  useState,
+  useCallback,
+  useMemo,
+} from "react";
 import Button from "./Button";
 import { useAuth } from "../useAuth";
 import SearchBar from "./SearchBar";
 import useDebounce from "../hooks/useDebounce";
+import Loader from "./Loader";
+import Pagination from "./Pagination";
+
+const PAGE_SIZE = 10;
 
 const Card = () => {
   const { isLoggedIn, user_id, role, token } = useAuth();
 
   const [pets, setPets] = useState([]);
+
+  const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 300);
+  const [species, setSpecies] = useState("");
+  const [breed, setBreed] = useState("");
+  const [age, setAge] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
   const [editingPetId, setEditingPetId] = useState(null);
   const [editForm, setEditForm] = useState({ name: "", age: "" });
-
-  const debouncedSearch = useDebounce(search, 200);
-  const originalData = useRef([]);
-
-  /* ---------------- FETCH ---------------- */
   const fetchData = useCallback(async () => {
-    const res = await axios.get(
-      `${process.env.REACT_APP_API_BASE_URL}/allpets`
-    );
-    const data = res.data?.data ?? [];
-    originalData.current = data;
-    setPets(data);
+    try {
+      setLoading(true);
+      const res = await axios.get(
+        `${process.env.REACT_APP_API_BASE_URL}/allpets`
+      );
+      const data = res.data?.data ?? [];
+
+      setPets(data);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+  const filteredPets = useMemo(() => {
+    let data = [...pets];
 
-  /* ---------------- SEARCH ---------------- */
-  useEffect(() => {
-    if (!originalData.current.length) return;
-
-    const value = debouncedSearch.toLowerCase().trim();
-    if (!value) {
-      setPets(originalData.current);
-      return;
+    if (debouncedSearch) {
+      const value = debouncedSearch.toLowerCase();
+      data = data.filter(
+        (p) =>
+          p.name?.toLowerCase().includes(value) ||
+          p.breed?.toLowerCase().includes(value)
+      );
     }
 
-    const filtered = originalData.current.filter(
-      (p) =>
-        (p.name ?? "").toLowerCase().includes(value) ||
-        (p.breed ?? "").toLowerCase().includes(value)
-    );
+    if (species) {
+      data = data.filter(
+        (p) => p.species?.toLowerCase() === species.toLowerCase()
+      );
+    }
 
-    setPets(filtered);
-  }, [debouncedSearch]);
+    if (breed) {
+      data = data.filter((p) =>
+        p.breed?.toLowerCase().includes(breed.toLowerCase())
+      );
+    }
+
+    if (age) {
+      data = data.filter((p) => p.age === Number(age));
+    }
+
+    return data;
+  }, [pets, debouncedSearch, species, breed, age]);
+
+  /* reset page when filter changes */
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch, species, breed, age]);
+
+  /* ---------------- PAGINATION SLICE ---------------- */
+  const paginatedPets = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    const end = start + PAGE_SIZE;
+    return filteredPets.slice(start, end);
+  }, [filteredPets, currentPage]);
 
   /* ---------------- ADOPT ---------------- */
   const handleAdopt = async (payload) => {
@@ -58,18 +98,16 @@ const Card = () => {
 
     await axios.post(
       `${process.env.REACT_APP_API_BASE_URL}/adoptpet`,
+      payload,
       {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      },
-      payload
+        headers: { Authorization: `Bearer ${token}` },
+      }
     );
-    alert("Adoption request has been submitted");
+
+    alert("Adoption request submitted");
     fetchData();
   };
 
-  /* ---------------- EDIT ---------------- */
   const handleEditClick = (pet) => {
     setEditingPetId(pet.pet_id);
     setEditForm({ name: pet.name, age: pet.age });
@@ -83,45 +121,59 @@ const Card = () => {
   const handleSave = async (pet_id) => {
     await axios.patch(
       `${process.env.REACT_APP_API_BASE_URL}/updatepet/${pet_id}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      },
-      editForm
+      editForm,
+      { headers: { Authorization: `Bearer ${token}` } }
     );
     setEditingPetId(null);
     fetchData();
   };
 
-  /* ---------------- DELETE ---------------- */
   const handleDelete = async (pet_id) => {
-    const confirm = window.confirm("Are you sure you want to delete this pet?");
-    if (!confirm) return;
+    if (!window.confirm("Delete this pet?")) return;
 
     await axios.patch(
       `${process.env.REACT_APP_API_BASE_URL}/removepet/${pet_id}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
+      {},
+      { headers: { Authorization: `Bearer ${token}` } }
     );
     fetchData();
   };
+  if (loading) return <Loader />;
 
   return (
     <div className="card-layout">
-      <div className="search-layout">
-        <SearchBar
-          placeholder="Search By Name or Breed"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />{" "}
+      {/* SEARCH */}
+      <SearchBar
+        placeholder="Search by name or breed"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+      />
+
+      {/* FILTERS */}
+      <div className="filters">
+        <select value={species} onChange={(e) => setSpecies(e.target.value)}>
+          <option value="">All Species</option>
+          <option value="Dog">Dog</option>
+          <option value="Cat">Cat</option>
+        </select>
+
+        <input
+          placeholder="Breed"
+          value={breed}
+          onChange={(e) => setBreed(e.target.value)}
+        />
+
+        <input
+          placeholder="Age"
+          type="number"
+          value={age}
+          onChange={(e) => setAge(e.target.value)}
+        />
       </div>
 
+      {/* CARDS */}
       <div className="card-container">
-        {pets.map((pet) => {
+        {paginatedPets.map((pet) => {
           const isEditing = editingPetId === pet.pet_id;
 
           return (
@@ -141,42 +193,39 @@ const Card = () => {
                   <div className="admin-actions">
                     {!isEditing ? (
                       <>
-                        <strong onClick={() => handleEditClick(pet)}>
-                          Edit
-                        </strong>
-                        <strong onClick={() => handleDelete(pet.pet_id)}>
+                        <span onClick={() => handleEditClick(pet)}>Edit</span>
+                        <span onClick={() => handleDelete(pet.pet_id)}>
                           Delete
-                        </strong>
+                        </span>
                       </>
                     ) : (
-                      <strong onClick={() => handleSave(pet.pet_id)}>
-                        Save
-                      </strong>
+                      <span onClick={() => handleSave(pet.pet_id)}>Save</span>
                     )}
                   </div>
                 )}
               </div>
 
-              <div className="pet-info">
-                <p>
-                  <strong>Age:</strong>{" "}
-                  {isEditing ? (
-                    <input
-                      name="age"
-                      type="number"
-                      value={editForm.age}
-                      onChange={handleEditChange}
-                    />
-                  ) : (
-                    pet.age
-                  )}
-                </p>
+              <p>
+                <strong>Age:</strong>{" "}
+                {isEditing ? (
+                  <input
+                    name="age"
+                    type="number"
+                    value={editForm.age}
+                    onChange={handleEditChange}
+                  />
+                ) : (
+                  pet.age
+                )}
+              </p>
 
-                <p>
-                  <strong>Breed:</strong> {pet.breed}
-                </p>
-              </div>
-
+              <p>
+                <strong>Breed:</strong> {pet.breed}
+               
+              </p>
+<p>
+   <strong>Species:</strong> {pet.species}
+</p>
               {!isEditing && (
                 <Button
                   text="Adopt"
@@ -187,6 +236,13 @@ const Card = () => {
           );
         })}
       </div>
+
+      <Pagination
+        currentPage={currentPage}
+        setCurrentPage={setCurrentPage}
+        totalItems={filteredPets.length}
+        pageSize={PAGE_SIZE}
+      />
     </div>
   );
 };

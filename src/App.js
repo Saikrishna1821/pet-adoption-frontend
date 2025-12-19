@@ -11,7 +11,6 @@ import { useAuth } from "./useAuth";
 
 function App() {
   const { user_id, role, username } = useAuth();
-  console.log("role", role);
   return (
     <div className="App">
       <NavBar />

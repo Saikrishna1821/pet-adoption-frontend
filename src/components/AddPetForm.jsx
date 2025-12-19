@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { useAuth } from "../useAuth";
 
 const AddPetForm = () => {
-  const {token}=useAuth()
+  const { token } = useAuth();
   const [form, setForm] = React.useState({
     name: "",
     age: "",
@@ -44,13 +44,12 @@ const AddPetForm = () => {
 
     try {
       const response = await axios.post(
-        `${process.env.REACT_APP_API_BASE_URL}/addPet`,
+        `${process.env.REACT_APP_API_BASE_URL}/addPet`,form,
         {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        },
-        form
+        }
       );
 
       alert("Pet added successfully");

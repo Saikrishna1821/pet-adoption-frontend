@@ -2,10 +2,11 @@ import axios from "axios";
 import React, { useCallback, useEffect, useState } from "react";
 import Button from "./Button";
 import { useAuth } from "../useAuth";
+import Loader from "./Loader";
 
 const ViewApplications = () => {
   const [applications, setApplications] = useState([]);
-
+  const [loading, setLoading] = useState(false);
   // Auth values are now dynamic and reusable
   const { user_id, role, isLoggedIn, token } = useAuth();
   let isAdmin = role == "ADMIN";
@@ -15,21 +16,23 @@ const ViewApplications = () => {
    */
   const fetchApplications = useCallback(async () => {
     try {
+      setLoading(true);
       const response = await axios.post(
         `${process.env.REACT_APP_API_BASE_URL}/getApplications`,
+        {
+          user_id: user_id,
+          role,
+        },
         {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        },
-        {
-          user_id: user_id,
-          role,
         }
       );
-
+      setLoading(false);
       setApplications(response.data.data);
     } catch (error) {
+      setLoading(false);
       console.error("Failed to fetch applications", error);
     }
   }, [user_id, role]);
@@ -43,13 +46,13 @@ const ViewApplications = () => {
         await axios.put(
           `${process.env.REACT_APP_API_BASE_URL}/approveAdopt`,
           {
+            application_id: applicationId,
+            status,
+          },
+          {
             headers: {
               Authorization: `Bearer ${token}`,
             },
-          },
-          {
-            application_id: applicationId,
-            status,
           }
         );
 
@@ -68,7 +71,8 @@ const ViewApplications = () => {
   useEffect(() => {
     fetchApplications();
   }, [fetchApplications]);
-  if (applications.length == 0) return <div>No Applications Found...</div>;
+  if (loading) return <Loader />;
+  if (applications.length == 0) return <Loader text="No Applications Found" />;
   return (
     <div className="table-wrapper">
       <table className="styled-table">

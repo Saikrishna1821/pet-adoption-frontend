@@ -13,13 +13,13 @@ const decodeToken = (token) => {
 export const useAuth = () => {
   const token = localStorage.getItem("token");
   // or read cookie if non-httpOnly
-
+ 
   const user = useMemo(() => decodeToken(token), [token]);
-console.log("user",user)
   return {
     name: user?.name ?? null,
     user_id: user?.user_id ?? null,
     role: user?.role ?? "VISITOR",
+    token:token,
     isLoggedIn: !!user,
   };
 };

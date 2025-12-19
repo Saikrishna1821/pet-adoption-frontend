@@ -7,7 +7,6 @@ const AppHeader = ({ username }) => {
   const { user_id, isLoggedIn } = useAuth();
   const location = useLocation();
   const islogInPage = location.pathname == "/login";
-  console.log("location", location);
   const LogoutUser = () => {
     localStorage.clear();
     window.location.href = "/";

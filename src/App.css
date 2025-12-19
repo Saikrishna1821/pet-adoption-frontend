@@ -27,7 +27,6 @@ body {
   background: aqua;
   text-align: center;
   font-size: larger;
-
 }
 
 .App {
@@ -62,7 +61,7 @@ label {
 
 input[type="text"],
 input[type="number"] {
-  padding:9px;
+  padding: 9px;
   border-radius: 4px;
   border: 1px solid #ccc;
 }
@@ -400,20 +399,87 @@ button:active {
 .search-input::placeholder {
   color: #aaa;
 }
-.admin-actions{
+.admin-actions {
   display: flex;
   align-items: center;
   gap: 5px;
   color: red;
 }
 
-.card-layout{
+.card-layout {
   overflow: auto;
   height: 100vh;
 }
 
-.search-layout{
+.search-layout {
   position: fixed;
   width: 100%;
- 
 }
+
+.loader {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  justify-content: center;
+  height: 100%;
+}
+.page-btn:focus {
+  outline: 2px solid #666;
+  outline-offset: 2px;
+}
+.pagination {
+  position: fixed;
+  bottom: 0;
+ 
+  width: 100%;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+
+ padding: 12px 0;
+  background-color: #ffffff;
+  border-top: 1px solid #e0e0e0;
+
+  z-index: 1000;
+}
+.filters {
+  display: flex;
+  gap: 12px;
+  margin: 16px 0 24px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* common styles */
+.filters select,
+.filters input {
+  padding: 10px 12px;
+  min-width: 160px;
+  border-radius: 8px;
+  border: 1px solid #d0d5dd;
+  font-size: 14px;
+  outline: none;
+  background-color: #fff;
+  transition: all 0.2s ease;
+}
+
+/* focus state */
+.filters select:focus,
+.filters input:focus {
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.15);
+}
+
+/* placeholder color */
+.filters input::placeholder {
+  color: #9ca3af;
+}
+
+/* select arrow polish */
+.filters select {
+  cursor: pointer;
+}
+
+
