@@ -1,23 +1,37 @@
-import logo from './logo.svg';
-import './App.css';
+import { Route, Routes } from "react-router-dom";
+import "./App.css";
+import Card from "./components/Card";
+import NavBar from "./components/NavBar";
+import Sidebar from "./components/Sidebar";
+import ViewApplications from "./components/ViewApplications";
+import AddPetForm from "./components/AddPetForm";
+import Login from "./components/Login";
+import Register from "./components/Register";
+import { useAuth } from "./useAuth";
 
 function App() {
+  const { user_id, role, username } = useAuth();
+  console.log("role", role);
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      <NavBar />
+
+      <div className={`${role !== "VISITOR" ? "layout" : ""}`}>
+        <Sidebar role={role} />
+
+        {/* dynamic content */}
+        <div className="content">
+          <Routes>
+            <Route path="/" element={<Card />} />
+            <Route path="/home" element={<Card />} />
+
+            <Route path="/manageapplications" element={<ViewApplications />} />
+            <Route path="/managepets" element={<AddPetForm />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+          </Routes>
+        </div>
+      </div>
     </div>
   );
 }
